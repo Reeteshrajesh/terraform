@@ -53,6 +53,21 @@ This repository provides Terraform configurations for deploying a production-gra
   - Email subscription support
   - Customizable notification settings
 
+## Project Structure
+
+```
+.
+├── main.tf           # Provider and backend configuration
+├── variables.tf      # Input variables
+├── networking.tf     # VPC and subnet configuration
+├── security.tf       # Security groups
+├── ecs.tf           # ECS cluster setup
+├── monitoring.tf     # CloudWatch and SNS
+├── outputs.tf        # Output definitions
+├── versions.tf       # Version constraints
+└── terraform.tfvars  # Variable values
+```
+
 ## Prerequisites
 
 ### Required Tools
@@ -60,11 +75,32 @@ This repository provides Terraform configurations for deploying a production-gra
 1. **Terraform** (>= 1.0)
 
    - Installation guide: [Terraform Downloads](https://www.terraform.io/downloads.html)
+   - Install commands:
+     ```bash
+     # MacOS
+     brew install terraform
+     # Windows
+     choco install terraform
+     ```
    - Verify installation: `terraform version`
 
 2. **AWS CLI**
    - Installation guide: [AWS CLI Installation](https://aws.amazon.com/cli/)
-   - Configuration: `aws configure`
+   - Install commands:
+     ```bash
+     # MacOS
+     brew install awscli
+     # Windows
+     choco install awscli
+     ```
+   - Configuration:
+     ```bash
+     aws configure
+     # Enter AWS Access Key ID
+     # Enter AWS Secret Access Key
+     # Enter Default region (us-west-2)
+     # Enter Default output format (json)
+     ```
 
 ### Documentation
 
@@ -134,8 +170,12 @@ aws dynamodb create-table \
 ### 1. Repository Setup
 
 ```bash
-git clone <repository-url>
-cd <repository-directory>
+# Clone repository
+git clone https://github.com/Reeteshrajesh/terraform.git
+cd terraform
+
+# Create necessary files
+touch main.tf variables.tf networking.tf security.tf ecs.tf monitoring.tf outputs.tf versions.tf
 ```
 
 ### 2. Configuration
@@ -166,9 +206,23 @@ terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
-### 4. Post-Deployment Setup
+### 4. Post-Deployment Verification
 
-#### Configure Monitoring
+```bash
+# Verify successful deployment
+terraform output
+
+# Check VPC creation
+aws ec2 describe-vpcs --filters "Name=tag:Name,Values=${var.project_name}-vpc"
+
+# Verify ECS cluster
+aws ecs describe-clusters --clusters ${var.project_name}-cluster
+
+# Check security groups
+aws ec2 describe-security-groups --filters "Name=tag:Name,Values=${var.project_name}*"
+```
+
+### 5. Configure Monitoring
 
 1. Set up email notifications:
 
@@ -186,23 +240,23 @@ aws logs describe-log-groups \
     --log-group-name-prefix /ecs/<project_name>
 ```
 
-#### Application Deployment Steps
+### 6. Application Deployment Steps
 
 1. **Container Registry**
 
 ```bash
- aws ecr create-repository \
-     --repository-name <app-name> \
-     --image-scanning-configuration scanOnPush=true
+aws ecr create-repository \
+    --repository-name <app-name> \
+    --image-scanning-configuration scanOnPush=true
 ```
 
 2. **Build and Push Image**
 
 ```bash
- docker build -t <app-name> .
- aws ecr get-login-password | docker login --username AWS --password-stdin <ecr-url>
- docker tag <app-name>:latest <ecr-url>/<app-name>:latest
- docker push <ecr-url>/<app-name>:latest
+docker build -t <app-name> .
+aws ecr get-login-password | docker login --username AWS --password-stdin <ecr-url>
+docker tag <app-name>:latest <ecr-url>/<app-name>:latest
+docker push <ecr-url>/<app-name>:latest
 ```
 
 3. **Deploy ECS Service**
@@ -218,6 +272,17 @@ aws logs describe-log-groups \
 - `ecs_cluster_name`: ECS cluster name
 - `alb_dns_name`: ALB DNS endpoint
 
+View outputs:
+
+```bash
+# View all outputs
+terraform output
+
+# Get specific output
+terraform output vpc_id
+terraform output private_subnet_ids
+```
+
 ## Maintenance and Troubleshooting
 
 ### Common Issues
@@ -225,8 +290,8 @@ aws logs describe-log-groups \
 1. **State Lock Issues**
 
 ```bash
- # Force unlock if needed
- terraform force-unlock <lock-id>
+# Force unlock if needed
+terraform force-unlock <lock-id>
 ```
 
 2. **Permission Errors**
@@ -247,6 +312,10 @@ Remove infrastructure:
 ```bash
 terraform plan -destroy -out=tfplan
 terraform apply tfplan
+
+# Verify cleanup
+aws ecs list-clusters
+aws ec2 describe-vpcs
 ```
 
 ## Security Considerations
@@ -275,15 +344,15 @@ terraform apply tfplan
 ## Author
 
 - **Reetesh Kumar**
-  - LinkedIn: [Reetesh kumar](https://www.linkedin.com/in/reetesh-kumar-850807255/)
+  - LinkedIn: [Reetesh Kumar](https://www.linkedin.com/in/reetesh-kumar-850807255/)
   - GitHub: [Reetesh Kumar](https://github.com/Reeteshrajesh)
   - Email: uttamreetesh@gmail.com
 
 ## Support and Contact
 
-- GitHub Issues: [Create New Issue](https://github.com/Reeteshrajesh/terraform)
+- GitHub Issues: [Create New Issue](https://github.com/Reeteshrajesh/terraform/issues)
 - Documentation of project: [Project details](https://github.com/Reeteshrajesh/terraform/blob/main/README.md)
-- Medium : [terraform project](https://medium.com/@uttamreetesh)
+- Medium: [terraform project](https://medium.com/@uttamreetesh)
 
 ## Contributing
 
@@ -292,6 +361,6 @@ terraform apply tfplan
 3. Submit pull request
 4. Follow coding standards
 
-## Support
+## License
 
-Create GitHub issues for bugs or feature requests
+MIT License - See LICENSE file for details
